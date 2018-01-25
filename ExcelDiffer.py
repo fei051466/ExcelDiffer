@@ -3,6 +3,7 @@
 
 import wx
 import wx.lib.filebrowsebutton as filebrowse
+import xlrd
 
 
 class MainFrame(wx.Frame):
@@ -33,8 +34,33 @@ class MainFrame(wx.Frame):
         self.ChooseExcelFile(event, 1)
 
     def Diff(self, event):
-        for file in self.excelFiles:
-            print file
+        '''
+        if '' in self.excelFiles:
+            dlg = wx.MessageDialog(self, "请选择两个Excel文件", "温馨提示", wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+        '''
+        firstExcel = xlrd.open_workbook(self.excelFiles[0])
+        secondExcel = xlrd.open_workbook(self.excelFiles[1])
+        commonSheets, onlyInFirst, onlyInSecond = self.calcSheet(firstExcel, secondExcel)
+
+    def calcSheet(self, firstExcel, secondExcel):
+        firstSheets = firstExcel.sheet_names()
+        secondSheets = secondExcel.sheet_names()
+        commonSheets = []
+        onlyInFirst = []
+        onlyInSecond = []
+        for sheet in firstSheets:
+            if sheet in secondSheets:
+                commonSheets.append(sheet)
+            else:
+                onlyInFirst.append(sheet)
+        for sheet in secondSheets:
+            if sheet not in commonSheets:
+                onlyInSecond.append(sheet)
+        return commonSheets, onlyInFirst, onlyInSecond
+
 
 if __name__ == '__main__':
     app = wx.App()
