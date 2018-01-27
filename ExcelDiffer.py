@@ -4,6 +4,7 @@
 import wx
 import wx.lib.filebrowsebutton as filebrowse
 import xlrd
+from wx import grid
 
 
 class MainFrame(wx.Frame):
@@ -15,9 +16,9 @@ class MainFrame(wx.Frame):
         wx.Frame.__init__(self, None, title="ExcelDiffer", pos=frmPos,
                           size=(frmWidth, frmHeight))
 
-        self.excelFiles = ['', '']
+        self.excelFilePaths = ['', '']
         self.firstFileButton = filebrowse.FileBrowseButton(self, -1, pos=(20, 20), labelText="第一个Excel文件",
-                                buttonText="选择", fileMask="*.xlsx", size=(600, -1), changeCallback=self.ChooseFirst)
+                                buttonText="选择", fileMask="*.xlsx", size=(600, -1), changeCallback=self.ChooseFirst,)
         self.secondFileButton = filebrowse.FileBrowseButton(self, -1, pos=(20, 60), labelText="第二个Excel文件",
                                 buttonText="选择", fileMask="*.xlsx", size=(600, -1), changeCallback=self.ChooseSecond)
         self.diffButton = wx.Button(self, -1, "开始比对", (20, 100))
@@ -25,7 +26,7 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def ChooseExcelFile(self, event, index):
-        self.excelFiles[index] = event.GetString()
+        self.excelFilePaths[index] = event.GetString()
 
     def ChooseFirst(self, event):
         self.ChooseExcelFile(event, 0)
@@ -41,9 +42,18 @@ class MainFrame(wx.Frame):
             dlg.Destroy()
             return
         '''
-        firstExcel = xlrd.open_workbook(self.excelFiles[0])
-        secondExcel = xlrd.open_workbook(self.excelFiles[1])
-        commonSheets, onlyInFirst, onlyInSecond = self.calcSheet(firstExcel, secondExcel)
+        firstExcel = xlrd.open_workbook(self.excelFilePaths[0])
+        secondExcel = xlrd.open_workbook(self.excelFilePaths[1])
+        self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(600, 250))
+        commonSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
+        self.typeNB.commonSheets = commonSheets
+        self.typeNB.diffSheets = diffSheets
+        commonPanel = wx.Panel(self.typeNB, -1)
+        onlyInFirstPanel = SheetPanel(self.typeNB, self.excelFilePaths[0], firstExcel, diffSheets[0])
+        onlyInSecondPanel = SheetPanel(self.typeNB, self.excelFilePaths[1], secondExcel, diffSheets[1])
+        self.typeNB.AddPage(commonPanel, "相同sheet")
+        self.typeNB.AddPage(onlyInFirstPanel, "第一个文件独有sheet")
+        self.typeNB.AddPage(onlyInSecondPanel, "第二个文件独有sheet")
 
     def calcSheet(self, firstExcel, secondExcel):
         firstSheets = firstExcel.sheet_names()
@@ -59,7 +69,53 @@ class MainFrame(wx.Frame):
         for sheet in secondSheets:
             if sheet not in commonSheets:
                 onlyInSecond.append(sheet)
-        return commonSheets, onlyInFirst, onlyInSecond
+        return commonSheets, [onlyInFirst, onlyInSecond]
+
+
+class SheetPanel(wx.Panel):
+    """
+    用于展示独有sheet的Panel
+    """
+    def __init__(self, parent, excelFilePath, excelFile, sheets):
+        wx.Panel.__init__(self, parent)
+        if not sheets:
+            noDataText = wx.StaticText(self, -1, "没有相关数据")
+            return
+        self.excelFilePath = excelFilePath
+        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 200))
+        for sheetName in sheets:
+            print sheetName
+            dataPanel = DataPanel(self.sheetNB, excelFile, sheetName)
+            self.sheetNB.AddPage(dataPanel, sheetName)
+
+
+class DataPanel(wx.Panel):
+    """
+    用于展示独有sheet的数据的panel
+    """
+    def __init__(self, parent, excelFile, sheetName):
+        wx.Panel.__init__(self, parent)
+        sheet = excelFile.sheet_by_name(sheetName)
+        rows, cols = sheet.nrows, sheet.ncols
+        dataGrid = grid.Grid(self, -1)
+        dataGrid.CreateGrid(rows, cols)
+        mergedCells = sheet.merged_cells
+        for cell in mergedCells:
+            dataGrid.SetCellSize(cell[0], cell[2], (cell[1] - cell[0]), (cell[3] - cell[2]))
+            dataGrid.SetCellAlignment(cell[0], cell[2], wx.ALIGN_CENTER, wx.ALIGN_CENTER)
+        for row in range(0, rows):
+            for col in range(0, cols):
+                value = sheet.cell(row, col).value
+                if not value:
+                    continue
+                if isinstance(value, float):
+                    if int(value) == value:
+                        value = int(value)
+                value = str(value)
+                dataGrid.SetCellValue(row, col, value)
+        sizer = wx.BoxSizer(wx.VERTICAL)  # 添加了sizer才能使得网格正常实现，原因不明
+        sizer.Add(dataGrid, 1, wx.EXPAND, 5)
+        self.SetSizer(sizer)
 
 
 if __name__ == '__main__':
