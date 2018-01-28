@@ -45,13 +45,13 @@ class MainFrame(wx.Frame):
         firstExcel = xlrd.open_workbook(self.excelFilePaths[0])
         secondExcel = xlrd.open_workbook(self.excelFilePaths[1])
         self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(600, 250))
-        commonSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
-        self.typeNB.commonSheets = commonSheets
+        sameSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
+        self.typeNB.commonSheets = sameSheets
         self.typeNB.diffSheets = diffSheets
-        commonPanel = wx.Panel(self.typeNB, -1)
+        samePanel = SameSheetPanel(self.typeNB, firstExcel, secondExcel, sameSheets)
         onlyInFirstPanel = SheetPanel(self.typeNB, self.excelFilePaths[0], firstExcel, diffSheets[0])
         onlyInSecondPanel = SheetPanel(self.typeNB, self.excelFilePaths[1], secondExcel, diffSheets[1])
-        self.typeNB.AddPage(commonPanel, "相同sheet")
+        self.typeNB.AddPage(samePanel, "相同sheet")
         self.typeNB.AddPage(onlyInFirstPanel, "第一个文件独有sheet")
         self.typeNB.AddPage(onlyInSecondPanel, "第二个文件独有sheet")
 
@@ -89,6 +89,44 @@ class SheetPanel(wx.Panel):
             self.sheetNB.AddPage(dataPanel, sheetName)
 
 
+class SameSheetPanel(wx.Panel):
+    """
+    用于展示相同sheet与diff结果的panel
+    """
+    def __init__(self, parent, firstExcel, secondExcel, sheets):
+        wx.Panel.__init__(self, parent)
+        if not sheets:
+            noDataText = wx.StaticText(self, -1, "没有相关数据")
+            return
+        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 200))
+        for sheetName in sheets:
+            print sheetName
+            diffDataPanel = DiffDataPanel(self.sheetNB, firstExcel, secondExcel, sheetName)
+            self.sheetNB.AddPage(diffDataPanel, sheetName)
+
+
+class DiffDataPanel(wx.Panel):
+    """
+    用于展示diff结果的panel
+    """
+    def __init__(self, parent, firstExcel, secondExcel, sheetName):
+        wx.Panel.__init__(self, parent)
+        sheetB = firstExcel.sheet_by_name(sheetName)
+        dataGridB = grid.Grid(self, -1)
+        dataGridB.CreateGrid(sheetB.nrows, sheetB.ncols)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(dataGridB, 1, wx.EXPAND, 5)
+        sheetA = firstExcel.sheet_by_name(sheetName)
+        dataGridA = grid.Grid(self, -1)
+        dataGridA.CreateGrid(sheetA.nrows, sheetA.ncols)
+        sizer.Add(dataGridA, 1, wx.EXPAND, 5)
+        sizerOuter = wx.BoxSizer(wx.VERTICAL)
+        sizerOuter.Add(sizer, 1, wx.EXPAND, 5)
+        staticMessage = wx.StaticText(self, -1, "test")
+        sizerOuter.Add(staticMessage, 1, wx.EXPAND, 5)
+        self.SetSizer(sizerOuter)
+
+
 class DataPanel(wx.Panel):
     """
     用于展示独有sheet的数据的panel
@@ -116,6 +154,8 @@ class DataPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)  # 添加了sizer才能使得网格正常实现，原因不明
         sizer.Add(dataGrid, 1, wx.EXPAND, 5)
         self.SetSizer(sizer)
+
+
 
 
 if __name__ == '__main__':
