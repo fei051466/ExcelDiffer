@@ -6,6 +6,8 @@ import wx.lib.filebrowsebutton as filebrowse
 import xlrd
 from wx import grid
 
+from config import getConfig
+
 
 class MainFrame(wx.Frame):
     def __init__(self):
@@ -18,30 +20,21 @@ class MainFrame(wx.Frame):
 
         self.excelFilePaths = ['', '']
         self.firstFileButton = filebrowse.FileBrowseButton(self, -1, pos=(20, 20), labelText="第一个Excel文件",
-                                buttonText="选择", fileMask="*.xlsx", size=(600, -1), changeCallback=self.ChooseFirst,)
+                                buttonText="选择", fileMask="*.xlsx", size=(600, -1))
         self.secondFileButton = filebrowse.FileBrowseButton(self, -1, pos=(20, 60), labelText="第二个Excel文件",
-                                buttonText="选择", fileMask="*.xlsx", size=(600, -1), changeCallback=self.ChooseSecond)
+                                buttonText="选择", fileMask="*.xlsx", size=(600, -1))
         self.diffButton = wx.Button(self, -1, "开始比对", (20, 100))
         self.Bind(wx.EVT_BUTTON, self.Diff, self.diffButton)
         self.Show()
 
-    def ChooseExcelFile(self, event, index):
-        self.excelFilePaths[index] = event.GetString()
-
-    def ChooseFirst(self, event):
-        self.ChooseExcelFile(event, 0)
-
-    def ChooseSecond(self, event):
-        self.ChooseExcelFile(event, 1)
-
     def Diff(self, event):
-        '''
-        if '' in self.excelFiles:
+        self.excelFilePaths[0] = self.firstFileButton.GetValue()
+        self.excelFilePaths[1] = self.secondFileButton.GetValue()
+        if '' in self.excelFilePaths:
             dlg = wx.MessageDialog(self, "请选择两个Excel文件", "温馨提示", wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return
-        '''
         firstExcel = xlrd.open_workbook(self.excelFilePaths[0])
         secondExcel = xlrd.open_workbook(self.excelFilePaths[1])
         self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(600, 250))
@@ -156,10 +149,10 @@ class DataPanel(wx.Panel):
         self.SetSizer(sizer)
 
 
-
-
 if __name__ == '__main__':
     app = wx.App()
     frm = MainFrame()
+    frm.firstFileButton.SetValue(getConfig('excelFilePath', 'firstFile'))
+    frm.secondFileButton.SetValue(getConfig('excelFilePath', 'secondFile'))
     app.MainLoop()
 
