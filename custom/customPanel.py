@@ -4,6 +4,9 @@
 import wx
 from wx import grid
 
+from customGrid import SheetGrid, InfoGrid
+from diffAlgorithm import diff
+
 
 class SheetPanel(wx.Panel):
     """
@@ -31,7 +34,7 @@ class SameSheetPanel(wx.Panel):
         if not sheets:
             noDataText = wx.StaticText(self, -1, "没有相关数据")
             return
-        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 200))
+        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 300))
         for sheetName in sheets:
             print sheetName
             diffDataPanel = DiffDataPanel(self.sheetNB, firstExcel,
@@ -46,18 +49,32 @@ class DiffDataPanel(wx.Panel):
     def __init__(self, parent, firstExcel, secondExcel, sheetName):
         wx.Panel.__init__(self, parent)
         sheetB = firstExcel.sheet_by_name(sheetName)
-        dataGridB = grid.Grid(self, -1)
-        dataGridB.CreateGrid(sheetB.nrows, sheetB.ncols)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(dataGridB, 1, wx.EXPAND, 5)
-        sheetA = firstExcel.sheet_by_name(sheetName)
-        dataGridA = grid.Grid(self, -1)
-        dataGridA.CreateGrid(sheetA.nrows, sheetA.ncols)
-        sizer.Add(dataGridA, 1, wx.EXPAND, 5)
+        dataGridB = SheetGrid(self, sheetB)
+        sheetA = secondExcel.sheet_by_name(sheetName)
+        dataGridA = SheetGrid(self, sheetA)
+
+        sizerUp= wx.BoxSizer(wx.HORIZONTAL)
+        sizerUp.Add(dataGridB, 1, wx.EXPAND, 5)
+        sizerUp.Add(dataGridA, 1, wx.EXPAND, 5)
+
+        infoNB = wx.Notebook(self, -1)
+
+        infoPanel = wx.Panel(infoNB, -1)
+        diffInfo = diff(dataGridB.getData(), dataGridA.getData())
+        infoGrid = InfoGrid(infoPanel, diffInfo)
+        infoMessage = wx.StaticText(infoPanel, -1, infoGrid.getInfoMessage())
+
+        sizerInner = wx.BoxSizer(wx.VERTICAL)
+        sizerInner.Add(infoMessage)
+        sizerInner.Add(infoGrid)
+        infoPanel.SetSizer(sizerInner)
+
+        infoNB.AddPage(infoPanel, "行增删")
+
         sizerOuter = wx.BoxSizer(wx.VERTICAL)
-        sizerOuter.Add(sizer, 1, wx.EXPAND, 5)
-        staticMessage = wx.StaticText(self, -1, "test")
-        sizerOuter.Add(staticMessage, 1, wx.EXPAND, 5)
+        sizerOuter.Add(sizerUp, 1, wx.EXPAND, 5)
+        sizerOuter.Add(infoNB, 1, wx.EXPAND, 5)
+
         self.SetSizer(sizerOuter)
 
 
@@ -68,25 +85,7 @@ class DataPanel(wx.Panel):
     def __init__(self, parent, excelFile, sheetName):
         wx.Panel.__init__(self, parent)
         sheet = excelFile.sheet_by_name(sheetName)
-        rows, cols = sheet.nrows, sheet.ncols
-        dataGrid = grid.Grid(self, -1)
-        dataGrid.CreateGrid(rows, cols)
-        mergedCells = sheet.merged_cells
-        for cell in mergedCells:
-            dataGrid.SetCellSize(cell[0], cell[2],
-                                 (cell[1] - cell[0]), (cell[3] - cell[2]))
-            dataGrid.SetCellAlignment(cell[0], cell[2],
-                                      wx.ALIGN_CENTER, wx.ALIGN_CENTER)
-        for row in range(0, rows):
-            for col in range(0, cols):
-                value = sheet.cell(row, col).value
-                if not value:
-                    continue
-                if isinstance(value, float):
-                    if int(value) == value:
-                        value = int(value)
-                value = str(value)
-                dataGrid.SetCellValue(row, col, value)
+        dataGrid = SheetGrid(self, sheet)
         sizer = wx.BoxSizer(wx.VERTICAL)  # 添加了sizer才能使得网格正常实现，原因不明
         sizer.Add(dataGrid, 1, wx.EXPAND, 5)
         self.SetSizer(sizer)
