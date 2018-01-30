@@ -48,17 +48,17 @@ class DiffSheetGrid(grid.Grid):
         self.SetMargins(0, 0)
         self.AutoSizeColumns(False)
 
-        attrDel = grid.GridCellAttr()
-        attrDel.SetBackgroundColour(wx.RED)
-        attrAdd = grid.GridCellAttr()
-        attrAdd.SetBackgroundColour(wx.BLUE)
-
         row = 0
         for i in info:
-            type = i[0:1]
-            if type == 'd':
+            diffType = i[0:1]
+            if diffType == 'd':
+                # attr不能复用，每行都需要独自的attr
+                attrDel = grid.GridCellAttr()
+                attrDel.SetBackgroundColour(wx.RED)
                 self.SetRowAttr(row, attrDel)
-            elif type == 'a':
+            elif diffType == 'a':
+                attrAdd = grid.GridCellAttr()
+                attrAdd.SetBackgroundColour(wx.BLUE)
                 self.SetRowAttr(row, attrAdd)
             row += 1
 
@@ -74,7 +74,6 @@ class DiffTable(grid.GridTableBase):
         self.colLabels = " ABCDEFGHIJKLMNOPQRSTUVWXYZ"[0:(sheet.ncols + 1)]
 
         self.data = []
-        rowCount = sheet.nrows
         blankData = ['' for _ in range(self.GetNumberCols() + 1)]
         if flag == 'B':
             for i in info:
