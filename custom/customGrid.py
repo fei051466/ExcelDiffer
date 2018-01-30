@@ -36,6 +36,106 @@ class SheetGrid(grid.Grid):
         return self.data
 
 
+class DiffSheetGrid(grid.Grid):
+    """
+    用于展示需要diff的sheet数据
+    """
+    def __init__(self, parent, sheet, info, flag):
+        grid.Grid.__init__(self, parent, -1)
+        self.table = DiffTable(sheet, info, flag)
+        self.SetTable(self.table, True)
+        self.SetRowLabelSize(0)
+        self.SetMargins(0, 0)
+        self.AutoSizeColumns(False)
+
+        attrDel = grid.GridCellAttr()
+        attrDel.SetBackgroundColour(wx.RED)
+        attrAdd = grid.GridCellAttr()
+        attrAdd.SetBackgroundColour(wx.BLUE)
+
+        row = 0
+        for i in info:
+            type = i[0:1]
+            if type == 'd':
+                self.SetRowAttr(row, attrDel)
+            elif type == 'a':
+                self.SetRowAttr(row, attrAdd)
+            row += 1
+
+
+class DiffTable(grid.GridTableBase):
+    """
+    用户存放需要diff的sheet数据
+    """
+    def __init__(self, sheet, info, flag):
+        grid.GridTableBase.__init__(self)
+
+        # 暂时只考虑行变化
+        self.colLabels = " ABCDEFGHIJKLMNOPQRSTUVWXYZ"[0:(sheet.ncols + 1)]
+
+        self.data = []
+        rowCount = sheet.nrows
+        blankData = ['' for _ in range(self.GetNumberCols() + 1)]
+        if flag == 'B':
+            for i in info:
+                diffType = i[0:1]
+                if diffType == 's':
+                    row = int(i[1:].split(":")[0])
+                else:
+                    row = int(i[1:])
+                data = ['%d' % (row + 1)] + sheet.row_values(row)
+                if diffType == 'd' or diffType == 's':
+                    self.data.append(data)
+                elif diffType == 'a':
+                    self.data.append(blankData)
+        elif flag == 'A':
+            for i in info:
+                diffType = i[0:1]
+                if diffType == 's':
+                    row = int(i[1:].split(":")[1])
+                else:
+                    row = int(i[1:])
+                data = ['%d' % (row + 1)] + sheet.row_values(row)
+                if diffType == 'a' or diffType == 's':
+                    self.data.append(data)
+                elif diffType == 'd':
+                    self.data.append(blankData)
+
+    def GetNumberCols(self):
+        return len(self.colLabels)
+
+    def GetNumberRows(self):
+        return len(self.data)
+
+    def IsEmptyCell(self, row, col):
+        try:
+            return not self.data[row][col]
+        except IndexError:
+            return True
+
+    def GetValue(self, row, col):
+        try:
+            return self.data[row][col]
+        except IndexError:
+            return ''
+
+    def SetValue(self, row, col, value):
+        def innerSetValue(row, col, value):
+            try:
+                self.data[row][col] = value
+            except IndexError:
+                self.data.append([' '] * self.GetNumberCols())
+                innerSetValue(row, col, value)
+                msg = grid.GridTableMessage(self,
+                            grid.GRIDTABLE_NOTIFY_ROWS_APPENDED,
+                            1)
+                self.GetView().ProcessTableMessage(msg)
+        innerSetValue(row, col, value)
+
+    def GetColLabelValue(self, col):
+        return self.colLabels[col]
+
+
 class InfoGrid(grid.Grid):
     """
     用于展示diff信息的网格
@@ -66,10 +166,10 @@ class InfoTable(grid.GridTableBase):
         for i in info:
             if i[0:1] == 'a':
                 self.addCount += 1
-                self.data.append(['新增', i[1:]])
-            elif i[0] == 'd':
+                self.data.append(['新增', int(i[1:]) + 1])
+            elif i[0:1] == 'd':
                 self.delCount += 1
-                self.data.append(['删除', i[1:]])
+                self.data.append(['删除', int(i[1:]) + 1])
         for d in self.data:
             print d
 
@@ -77,7 +177,7 @@ class InfoTable(grid.GridTableBase):
         return 2
 
     def GetNumberRows(self):
-        return len(self.data) + 1
+        return len(self.data)
 
     def IsEmptyCell(self, row, col):
         try:

@@ -4,7 +4,7 @@
 import wx
 from wx import grid
 
-from customGrid import SheetGrid, InfoGrid
+from customGrid import SheetGrid, InfoGrid, DiffSheetGrid
 from diffAlgorithm import diff
 
 
@@ -34,7 +34,7 @@ class SameSheetPanel(wx.Panel):
         if not sheets:
             noDataText = wx.StaticText(self, -1, "没有相关数据")
             return
-        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 300))
+        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 350))
         for sheetName in sheets:
             print sheetName
             diffDataPanel = DiffDataPanel(self.sheetNB, firstExcel,
@@ -49,9 +49,19 @@ class DiffDataPanel(wx.Panel):
     def __init__(self, parent, firstExcel, secondExcel, sheetName):
         wx.Panel.__init__(self, parent)
         sheetB = firstExcel.sheet_by_name(sheetName)
-        dataGridB = SheetGrid(self, sheetB)
         sheetA = secondExcel.sheet_by_name(sheetName)
-        dataGridA = SheetGrid(self, sheetA)
+
+        dataB = [[str(sheetB.cell_value(row, col))
+                 for col in range(sheetB.ncols)]
+                 for row in range(sheetB.nrows)]
+        dataA = [[str(sheetA.cell_value(row, col))
+                 for col in range(sheetA.ncols)]
+                 for row in range(sheetA.nrows)]
+
+        diffInfo = diff(dataB, dataA)
+
+        dataGridB = DiffSheetGrid(self, sheetB, diffInfo, "B")
+        dataGridA = DiffSheetGrid(self, sheetA, diffInfo, "A")
 
         sizerUp= wx.BoxSizer(wx.HORIZONTAL)
         sizerUp.Add(dataGridB, 1, wx.EXPAND, 5)
@@ -60,7 +70,6 @@ class DiffDataPanel(wx.Panel):
         infoNB = wx.Notebook(self, -1)
 
         infoPanel = wx.Panel(infoNB, -1)
-        diffInfo = diff(dataGridB.getData(), dataGridA.getData())
         infoGrid = InfoGrid(infoPanel, diffInfo)
         infoMessage = wx.StaticText(infoPanel, -1, infoGrid.getInfoMessage())
 

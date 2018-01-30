@@ -26,22 +26,22 @@ def diff(dataBefore, dataAfter):
     aIndexLen = len(indexAfter)
     while i < bLen or j < aLen:
         if bIndex == bIndexLen:
-            info.append("a%d" % (j + 1))
+            info.append("a%d" % j)
             j += 1
         elif aIndex == aIndexLen:
-            info.append("d%d" % (i + 1))
+            info.append("d%d" % i)
             i += 1
         elif indexBefore[bIndex] == i and indexAfter[aIndex] == j:
-            info.append("s%d" % (j + 1))
+            info.append("s%d:%s" % (i, j))
             i += 1
             j += 1
             bIndex += 1
             aIndex += 1
         elif indexBefore[bIndex] == i and indexAfter[aIndex] > j:
-            info.append("a%d" % (j + 1))
+            info.append("a%d" % j)
             j += 1
         elif indexBefore[aIndex] > i and indexAfter[aIndex] == j:
-            info.append("d%d" % (i + 1))
+            info.append("d%d" % i)
             i += 1
         else:
             info.append("c%d" % j)
