@@ -61,16 +61,16 @@ class DiffDataPanel(wx.Panel):
         diffInfo = diff(dataB, dataA)
 
         dataGridB = DiffSheetGrid(self, sheetB, diffInfo, "B")
-        # dataGridA = DiffSheetGrid(self, sheetA, diffInfo, "A")
+        dataGridA = DiffSheetGrid(self, sheetA, diffInfo, "A")
 
         sizerUp= wx.BoxSizer(wx.HORIZONTAL)
         sizerUp.Add(dataGridB, 1, wx.EXPAND, 5)
-        # sizerUp.Add(dataGridA, 1, wx.EXPAND, 5)
+        sizerUp.Add(dataGridA, 1, wx.EXPAND, 5)
 
         infoNB = wx.Notebook(self, -1)
 
         infoPanel = wx.Panel(infoNB, -1)
-        infoGrid = InfoGrid(infoPanel, diffInfo)
+        infoGrid = InfoGrid(infoPanel, diffInfo, dataGridB, dataGridA)
         infoMessage = wx.StaticText(infoPanel, -1, infoGrid.getInfoMessage())
 
         sizerInner = wx.BoxSizer(wx.VERTICAL)

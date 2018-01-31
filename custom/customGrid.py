@@ -47,6 +47,7 @@ class DiffSheetGrid(grid.Grid):
         self.SetRowLabelSize(0)
         self.SetMargins(0, 0)
         self.AutoSizeColumns(False)
+        self.mapping = self.table.GetMapping()
 
         row = 0
         for i in info:
@@ -63,6 +64,10 @@ class DiffSheetGrid(grid.Grid):
             row += 1
 
 
+    def GetMapping(self):
+        return self.mapping
+
+
 class DiffTable(grid.GridTableBase):
     """
     用户存放需要diff的sheet数据
@@ -75,6 +80,7 @@ class DiffTable(grid.GridTableBase):
 
         self.data = []
         blankData = ['' for _ in range(self.GetNumberCols() + 1)]
+        self.mapping = []
         if flag == 'B':
             for i in info:
                 diffType = i[0:1]
@@ -85,6 +91,7 @@ class DiffTable(grid.GridTableBase):
                 data = ['%d' % (row + 1)] + sheet.row_values(row)
                 if diffType == 'd' or diffType == 's':
                     self.data.append(data)
+                    self.mapping.append(len(self.data) - 1)
                 elif diffType == 'a':
                     self.data.append(blankData)
         elif flag == 'A':
@@ -97,6 +104,7 @@ class DiffTable(grid.GridTableBase):
                 data = ['%d' % (row + 1)] + sheet.row_values(row)
                 if diffType == 'a' or diffType == 's':
                     self.data.append(data)
+                    self.mapping.append(len(self.data) - 1)
                 elif diffType == 'd':
                     self.data.append(blankData)
 
@@ -134,12 +142,15 @@ class DiffTable(grid.GridTableBase):
     def GetColLabelValue(self, col):
         return self.colLabels[col]
 
+    def GetMapping(self):
+        return self.mapping
+
 
 class InfoGrid(grid.Grid):
     """
     用于展示diff信息的网格
     """
-    def __init__(self, parent, info):
+    def __init__(self, parent, info, dataGridB, dataGridA):
         grid.Grid.__init__(self, parent, -1)
         self.table = InfoTable(info)
         self.SetTable(self.table, True)
@@ -147,8 +158,27 @@ class InfoGrid(grid.Grid):
         self.SetMargins(0, 0)
         self.AutoSizeColumns(False)
 
+        self.Bind(grid.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.dataGridB = dataGridB
+        self.dataGridA = dataGridA
+
     def getInfoMessage(self):
         return "共计新增%d行，删除%d行" % (self.table.getCount())
+
+    def OnCellLeftClick(self, evt):
+        col = evt.GetCol()
+        if col != 1:
+            return
+        row = evt.GetRow()
+        dataRow = int(self.GetCellValue(row, col)) - 1
+        diffType = self.GetCellValue(row, col - 1)
+        print self.dataGridA.GetMapping()
+        if diffType == u'删除':
+            hightlightRow = self.dataGridB.GetMapping()[dataRow]
+        elif diffType == u'新增':
+            hightlightRow = self.dataGridA.GetMapping()[dataRow]
+        self.dataGridB.SelectRow(hightlightRow)
+        self.dataGridA.SelectRow(hightlightRow)
 
 
 class InfoTable(grid.GridTableBase):
