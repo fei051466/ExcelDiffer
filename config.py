@@ -5,9 +5,12 @@ import ConfigParser
 
 
 def getConfig(section, key):
-    config = ConfigParser.ConfigParser()
-    config.read("default.conf")
-    return config.get(section, key)
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read("default.conf")
+        return config.get(section, key)
+    except Exception, e:
+        return None
 
 
 if __name__ == '__main__':

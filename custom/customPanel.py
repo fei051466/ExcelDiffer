@@ -21,7 +21,6 @@ class SheetPanel(wx.Panel):
         self.excelFilePath = excelFilePath
         self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 200))
         for sheetName in sheets:
-            print sheetName
             dataPanel = DataPanel(self.sheetNB, excelFile, sheetName)
             self.sheetNB.AddPage(dataPanel, sheetName)
 
@@ -37,7 +36,6 @@ class SameSheetPanel(wx.Panel):
             return
         self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(650, 400))
         for sheetName in sheets:
-            print sheetName
             diffDataPanel = DiffDataPanel(self.sheetNB, firstExcel,
                                           secondExcel, sheetName)
             self.sheetNB.AddPage(diffDataPanel, sheetName)
@@ -60,34 +58,6 @@ class DiffDataPanel(wx.Panel):
                  for row in range(sheetA.nrows)]
 
         rowInfo, colInfo, cellInfo = diff(dataB, dataA)
-
-        '''
-        print 'diffInfo'
-        rowDiffInfo = []
-        for i in diffInfo:
-            diffType = i[0:1]
-            if diffType == 's':
-                indexB, indexA = i[1:].split(':')
-                rowDiffInfo.append(diff(dataB[int(indexB)], dataA[int(indexA)]))
-        for i in range(len(dataB)):
-            delInfo = "d%d" % i
-            allHave = True
-            for j in rowDiffInfo:
-                if delInfo not in j:
-                    allHave = False
-                    break
-            if allHave:
-                print 'delfInfo:', delInfo
-        for i in range(len(dataA)):
-            addInfo = "a%d" % i
-            allHave = True
-            for j in rowDiffInfo:
-                if addInfo not in j:
-                    allHave = False
-                    break
-            if allHave:
-                print 'addInfo:', addInfo
-        '''
 
         dataGridB = DiffSheetGrid(self, sheetB, rowInfo, colInfo, cellInfo, "B")
         dataGridA = DiffSheetGrid(self, sheetA, rowInfo, colInfo, cellInfo, "A")

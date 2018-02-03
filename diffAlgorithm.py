@@ -4,8 +4,7 @@
 
 def diff(dataBefore, dataAfter):
     """
-    计算数据修改前后的变化
-    实现一个只能计算行增删情况的diff算法
+    核心diff算法
     :param dataBefore: 二维数组数据
     :param dataAfter: 二维数组数据
     :return: 变化描述
@@ -28,7 +27,6 @@ def diff(dataBefore, dataAfter):
     # 考虑到列增删的影响，此处实际是相似度高的行判别为相同行
     # 相似度用最长公共子序列长度表征
     rowInfo = subdiff(dataBefore, dataAfter)
-    print '**diff()** 步骤1 diff结果', rowInfo
 
     # 步骤2：步骤1中以外的行，可以被视为是删除/增加的行，去除
     delCountBefore = 0
@@ -45,28 +43,15 @@ def diff(dataBefore, dataAfter):
             del dataAfter[int(indexA)]
             del mappingAfter[indexA]
             delCountAfter += 1
-    print '**diff()** 步骤2删除行后dataBefore'
-    for row in dataBefore:
-        print row
-    print '**diff()** 步骤2删除行后dataAfter'
-    for row in dataAfter:
-        print row
 
     # 步骤3：数据行列倒置，用于处理列的情况
     dataBefore = row2col(dataBefore)
     dataAfter = row2col(dataAfter)
     mappingBefore = row2col(mappingBefore)
     mappingAfter = row2col(mappingAfter)
-    print '**diff()** 步骤3行列倒置后dataBefore'
-    for row in dataBefore:
-        print row
-    print '**diff()** 步骤3行列倒置后dataAfter'
-    for row in dataAfter:
-        print row
 
     # 步骤4：倒置后的数据diff
     colInfo = subdiff(dataBefore, dataAfter)
-    print '**diff()** 步骤4 diff结果', colInfo
 
     # 步骤5：再次根据结果删除，此时相当于删除了原数据中不同的列
     delCountBefore = 0
@@ -83,50 +68,37 @@ def diff(dataBefore, dataAfter):
             del dataAfter[indexA]
             del mappingAfter[indexA]
             delCountAfter += 1
-    print '**diff()** 步骤5删除行后dataBefore'
-    for row in dataBefore:
-        print row
-    print '**diff()** 步骤5删除行后dataAfter'
-    for row in dataAfter:
-        print row
 
     # 步骤6 再次行列倒置
     dataBefore = row2col(dataBefore)
     dataAfter = row2col(dataAfter)
     mappingBefore = row2col(mappingBefore)
     mappingAfter = row2col(mappingAfter)
-    print '**diff()** 步骤6行列倒置后dataBefore'
-    for row in dataBefore:
-        print row
-    print '**diff()** 步骤6行列倒置后dataAfter'
-    for row in dataAfter:
-        print row
 
     # 步骤7 剩余数据找单元格修改
     cellInfo = []
     for row in range(len(dataBefore)):
         for col in range(len(dataBefore[0])):
             if dataBefore[row][col] != dataAfter[row][col]:
-                print '**diff() 步骤7单元格[%d][%d]修改' % (row, col),\
-                    dataBefore[row][col], '->', dataAfter[row][col]
                 info = []
                 info.append(mappingBefore[row][col])
                 info.append(mappingAfter[row][col])
                 cellInfo.append(info)
-    for info in cellInfo:
-        print info
 
     return rowInfo, colInfo, cellInfo
 
 
 def subdiff(dataBefore, dataAfter):
-    '''
-    dataBeforeT = transfer(dataBefore)
-    dataAfterT = transfer(dataAfter)
-    indexBefore, indexAfter = longgestCommonSubsequence(dataBeforeT, dataAfterT)
-    '''
+    """
+    diff子算法
+    :param dataBefore: 修改前数据
+    :param dataAfter: 修改后数据
+    :return: 形如["s0:0", "d1", "a1"]的列表数据
+    s前缀代表相同序列号，分号前后对应修改前后数据
+    d前缀代表修改前数据删除的数据
+    a前缀代表休后后数据增加的数据
+    """
     indexBefore, indexAfter = longgestCommonSubsequence(dataBefore, dataAfter)
-    print indexBefore, indexAfter
     info = []
     i = 0
     j = 0
@@ -166,19 +138,13 @@ def subdiff(dataBefore, dataAfter):
     return info
 
 
-'''
-def transfer(data):
-    """
-    将二维数组转化为一维数组
-    直接将每一行的元数据简单合并为一个字符串
-    :param data: 二维数组数据
-    :return: 一维数组数据
-    """
-    return ["".join(map(str, row)) for row in data]
-'''
-
-
 def longgestCommonSubsequence(a, b):
+    """
+    LCS算法，最长公共子序列
+    :param a: 数据a
+    :param b: 数据b
+    :return: 返回两个数组，分别代表两个数据中公共子序列的小标值
+    """
     aLen = len(a)
     bLen = len(b)
     dp = [[0 for i in range(bLen + 1)] for j in range(aLen + 1)]
@@ -200,22 +166,32 @@ def longgestCommonSubsequence(a, b):
 def equal(dataB, dataA):
     """
     计算两个数据是否相等
-    使用==判断
     :param dataB: 原数据
     :param dataA: 修改后数据
     :return: 数据a与b是否相等
     """
-    # return a == b
     if isinstance(dataB, list):
+        # list类型判断是否有公共的子项
+        # 用于在data是二维数据的情况
         setB = set(dataB)
         setA = set(dataA)
         setS = setB & setA
         return len(setS) > 0
     else:
+        # 否则直接判断二者是否相等
         return dataB == dataA
 
 
 def calcSubsequenceIndex(path, a, b, aIndex, bIndex):
+    """
+    递归方式计算公共子序列的下标值
+    :param path: 路径信息dp二维数组
+    :param a: 序列a
+    :param b: 序列b
+    :param aIndex: 当前所求序列a的下标值
+    :param bIndex: 当前所求序列b的下标值
+    :return: 对应两个公共子序列的下标值数组
+    """
     if aIndex == 0 or bIndex == 0:
         return [], []
     if path[aIndex][bIndex] == 1:
@@ -250,16 +226,10 @@ if __name__ == '__main__':
         for col in range(sheetInFirst.ncols):
             partData.append(sheetInFirst.cell_value(row, col))
         firstData.append(partData)
-        print partData
     secondData = []
     for row in range(sheetInSecond.nrows):
         partData = []
         for col in range(sheetInSecond.ncols):
             partData.append(sheetInSecond.cell_value(row, col))
         secondData.append(partData)
-        print partData
     diff(firstData, secondData)
-
-    print '-' * 20
-    for row in firstData:
-        print row

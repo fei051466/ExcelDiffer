@@ -9,6 +9,9 @@ from customPanel import SameSheetPanel, SheetPanel
 
 
 class MainFrame(wx.Frame):
+    """
+    程序主窗口
+    """
     def __init__(self):
         screenSize = wx.DisplaySize()
         frmWidth = screenSize[0] / 2
@@ -29,6 +32,11 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def Diff(self, event):
+        """
+        点击"开始对比"按钮后触发的函数，计算diff数据并在窗口中展示
+        :param event:
+        :return:
+        """
         self.excelFilePaths[0] = self.firstFileButton.GetValue()
         self.excelFilePaths[1] = self.secondFileButton.GetValue()
         if '' in self.excelFilePaths:
@@ -53,6 +61,12 @@ class MainFrame(wx.Frame):
         self.typeNB.AddPage(onlyInSecondPanel, "第二个文件独有sheet")
 
     def calcSheet(self, firstExcel, secondExcel):
+        """
+        计算两个Excel文件中sheet表情况，得出相同名称的sheet表和单独的sheet表
+        :param firstExcel:
+        :param secondExcel:
+        :return:
+        """
         firstSheets = firstExcel.sheet_names()
         secondSheets = secondExcel.sheet_names()
         commonSheets = []
