@@ -4,7 +4,8 @@
 import wx
 from wx import grid
 
-from customGrid import SheetGrid, InfoGrid, DiffSheetGrid
+from customGrid import SheetGrid, DiffSheetGrid
+from customGrid import RowInfoGrid, ColInfoGrid, CellInfoGrid
 from diffAlgorithm import diff
 
 
@@ -34,7 +35,7 @@ class SameSheetPanel(wx.Panel):
         if not sheets:
             noDataText = wx.StaticText(self, -1, "没有相关数据")
             return
-        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(550, 350))
+        self.sheetNB = wx.Notebook(self, -1, pos=(20, 10), size=(650, 400))
         for sheetName in sheets:
             print sheetName
             diffDataPanel = DiffDataPanel(self.sheetNB, firstExcel,
@@ -58,10 +59,38 @@ class DiffDataPanel(wx.Panel):
                  for col in range(sheetA.ncols)]
                  for row in range(sheetA.nrows)]
 
-        diffInfo = diff(dataB, dataA)
+        rowInfo, colInfo, cellInfo = diff(dataB, dataA)
 
-        dataGridB = DiffSheetGrid(self, sheetB, diffInfo, "B")
-        dataGridA = DiffSheetGrid(self, sheetA, diffInfo, "A")
+        '''
+        print 'diffInfo'
+        rowDiffInfo = []
+        for i in diffInfo:
+            diffType = i[0:1]
+            if diffType == 's':
+                indexB, indexA = i[1:].split(':')
+                rowDiffInfo.append(diff(dataB[int(indexB)], dataA[int(indexA)]))
+        for i in range(len(dataB)):
+            delInfo = "d%d" % i
+            allHave = True
+            for j in rowDiffInfo:
+                if delInfo not in j:
+                    allHave = False
+                    break
+            if allHave:
+                print 'delfInfo:', delInfo
+        for i in range(len(dataA)):
+            addInfo = "a%d" % i
+            allHave = True
+            for j in rowDiffInfo:
+                if addInfo not in j:
+                    allHave = False
+                    break
+            if allHave:
+                print 'addInfo:', addInfo
+        '''
+
+        dataGridB = DiffSheetGrid(self, sheetB, rowInfo, colInfo, cellInfo, "B")
+        dataGridA = DiffSheetGrid(self, sheetA, rowInfo, colInfo, cellInfo, "A")
 
         sizerUp= wx.BoxSizer(wx.HORIZONTAL)
         sizerUp.Add(dataGridB, 1, wx.EXPAND, 5)
@@ -69,16 +98,41 @@ class DiffDataPanel(wx.Panel):
 
         infoNB = wx.Notebook(self, -1)
 
-        infoPanel = wx.Panel(infoNB, -1)
-        infoGrid = InfoGrid(infoPanel, diffInfo, dataGridB, dataGridA)
-        infoMessage = wx.StaticText(infoPanel, -1, infoGrid.getInfoMessage())
+        rowInfoPanel = wx.Panel(infoNB, -1)
+        rowInfoGrid = RowInfoGrid(rowInfoPanel, rowInfo, dataGridB, dataGridA)
+        rowInfoMessage = wx.StaticText(rowInfoPanel, -1,
+                                       rowInfoGrid.getInfoMessage())
 
-        sizerInner = wx.BoxSizer(wx.VERTICAL)
-        sizerInner.Add(infoMessage)
-        sizerInner.Add(infoGrid)
-        infoPanel.SetSizer(sizerInner)
+        sizerRowInfo = wx.BoxSizer(wx.VERTICAL)
+        sizerRowInfo.Add(rowInfoMessage)
+        sizerRowInfo.Add(rowInfoGrid)
+        rowInfoPanel.SetSizer(sizerRowInfo)
 
-        infoNB.AddPage(infoPanel, "行增删")
+        infoNB.AddPage(rowInfoPanel, "行增删")
+
+        colInfoPanel = wx.Panel(infoNB, -1)
+        colInfoGrid = ColInfoGrid(colInfoPanel, colInfo, dataGridB, dataGridA)
+        colInfoMessage = wx.StaticText(colInfoPanel, -1,
+                                       colInfoGrid.getInfoMessage())
+
+        sizerColInfo = wx.BoxSizer(wx.VERTICAL)
+        sizerColInfo.Add(colInfoMessage)
+        sizerColInfo.Add(colInfoGrid)
+        colInfoPanel.SetSizer(sizerColInfo)
+
+        infoNB.AddPage(colInfoPanel, "列增删")
+
+        cellInfoPanel = wx.Panel(infoNB, -1)
+        cellInfoGrid = CellInfoGrid(cellInfoPanel, cellInfo, dataGridB, dataGridA)
+        cellInfoMessage = wx.StaticText(cellInfoPanel, -1,
+                                       cellInfoGrid.getInfoMessage())
+
+        sizerCellInfo = wx.BoxSizer(wx.VERTICAL)
+        sizerCellInfo.Add(cellInfoMessage)
+        sizerCellInfo.Add(cellInfoGrid)
+        cellInfoPanel.SetSizer(sizerCellInfo)
+
+        infoNB.AddPage(cellInfoPanel, "单元格修改")
 
         sizerOuter = wx.BoxSizer(wx.VERTICAL)
         sizerOuter.Add(sizerUp, 1, wx.EXPAND, 5)

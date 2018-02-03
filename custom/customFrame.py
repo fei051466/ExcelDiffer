@@ -13,9 +13,9 @@ class MainFrame(wx.Frame):
         screenSize = wx.DisplaySize()
         frmWidth = screenSize[0] / 2
         frmHeight = screenSize[1] / 2
-        frmPos = (screenSize[0] / 4, screenSize[1] / 4)
+        frmPos = (screenSize[0] / 8, screenSize[1] / 8)
         wx.Frame.__init__(self, None, title="ExcelDiffer", pos=frmPos,
-                          size=(frmWidth, frmHeight + 150))
+                          size=(frmWidth + 100, frmHeight + 200))
 
         self.excelFilePaths = ['', '']
         self.firstFileButton = filebrowse.FileBrowseButton(self, -1,
@@ -38,7 +38,7 @@ class MainFrame(wx.Frame):
             return
         firstExcel = xlrd.open_workbook(self.excelFilePaths[0])
         secondExcel = xlrd.open_workbook(self.excelFilePaths[1])
-        self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(600, 400))
+        self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(700, 450))
         sameSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
         self.typeNB.commonSheets = sameSheets
         self.typeNB.diffSheets = diffSheets
