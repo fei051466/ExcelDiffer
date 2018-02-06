@@ -50,7 +50,7 @@ class DiffTable(grid.GridTableBase):
             if diffType != 's':
                 self.mapping['row'].append(i)
             else:
-                self.mapping['cell'][i] = [(i + addCount) for col in range(sheet.ncols)]
+                self.mapping['cell'][i - addCount] = [i for col in range(sheet.ncols)]
 
         # 行列转置
         self.data = map(list, zip(*self.data))

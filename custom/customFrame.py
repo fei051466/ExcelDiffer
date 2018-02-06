@@ -58,8 +58,14 @@ class MainFrame(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
-        firstExcel = xlrd.open_workbook(firstFile)
-        secondExcel = xlrd.open_workbook(secondFile)
+        try:
+            firstExcel = xlrd.open_workbook(firstFile)
+            secondExcel = xlrd.open_workbook(secondFile)
+        except Exception, e:
+            dlg = wx.MessageDialog(self, "打开文件出错，请检查所选文件", "温馨提示", wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
         sameSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
         self.typeNB.commonSheets = sameSheets
         self.typeNB.diffSheets = diffSheets
