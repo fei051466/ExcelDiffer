@@ -13,21 +13,34 @@ class MainFrame(wx.Frame):
     程序主窗口
     """
     def __init__(self):
-        screenSize = wx.DisplaySize()
-        frmWidth = screenSize[0] / 2
-        frmHeight = screenSize[1] / 2
-        frmPos = (screenSize[0] / 8, screenSize[1] / 8)
-        wx.Frame.__init__(self, None, title="ExcelDiffer", pos=frmPos,
-                          size=(frmWidth + 100, frmHeight + 200))
+        wx.Frame.__init__(self, None, title="ExcelDiffer", size=(960, 640))
 
-        self.excelFilePaths = ['', '']
+        self.Center()
+
         self.firstFileButton = filebrowse.FileBrowseButton(self, -1,
-                pos=(20, 20), labelText="第一个Excel文件",
-                buttonText="选择", fileMask="*.xlsx", size=(600, -1))
+                labelText="第一个Excel文件",
+                buttonText="选择", fileMask="*.xlsx")
         self.secondFileButton = filebrowse.FileBrowseButton(self, -1,
-                pos=(20, 60), labelText="第二个Excel文件",
-                buttonText="选择", fileMask="*.xlsx", size=(600, -1))
-        self.diffButton = wx.Button(self, -1, "开始比对", (20, 100))
+                labelText="第二个Excel文件",
+                buttonText="选择", fileMask="*.xlsx")
+
+        fileButtonSizer = wx.BoxSizer(wx.VERTICAL)
+        fileButtonSizer.Add(self.firstFileButton, 0, wx.EXPAND)
+        fileButtonSizer.Add(self.secondFileButton, 0, wx.EXPAND)
+
+        self.diffButton = wx.Button(self, -1, "开始比对")
+
+        fileSelectSizer = wx.BoxSizer(wx.HORIZONTAL)
+        fileSelectSizer.Add(fileButtonSizer, 9, wx.EXPAND)
+        fileSelectSizer.Add(self.diffButton, 1, wx.EXPAND)
+
+        self.typeNB = wx.Notebook(self, -1)
+        frameSizer = wx.BoxSizer(wx.VERTICAL)
+        frameSizer.Add(fileSelectSizer, 1, wx.ALIGN_CENTER)
+        frameSizer.Add(self.typeNB, 9, wx.EXPAND)
+
+        self.SetSizer(frameSizer)
+
         self.Bind(wx.EVT_BUTTON, self.Diff, self.diffButton)
         self.Show()
 
@@ -37,25 +50,26 @@ class MainFrame(wx.Frame):
         :param event:
         :return:
         """
-        self.excelFilePaths[0] = self.firstFileButton.GetValue()
-        self.excelFilePaths[1] = self.secondFileButton.GetValue()
-        if '' in self.excelFilePaths:
+        self.typeNB.DeleteAllPages()
+        firstFile = self.firstFileButton.GetValue()
+        secondFile = self.secondFileButton.GetValue()
+        if firstFile == '' or secondFile == '':
             dlg = wx.MessageDialog(self, "请选择两个Excel文件", "温馨提示", wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return
-        firstExcel = xlrd.open_workbook(self.excelFilePaths[0])
-        secondExcel = xlrd.open_workbook(self.excelFilePaths[1])
-        self.typeNB = wx.Notebook(self, -1, pos=(20, 120), size=(700, 450))
+        firstExcel = xlrd.open_workbook(firstFile)
+        secondExcel = xlrd.open_workbook(secondFile)
         sameSheets, diffSheets = self.calcSheet(firstExcel, secondExcel)
         self.typeNB.commonSheets = sameSheets
         self.typeNB.diffSheets = diffSheets
-        samePanel = SameSheetPanel(self.typeNB, firstExcel,
-                                   secondExcel, sameSheets)
-        onlyInFirstPanel = SheetPanel(self.typeNB, self.excelFilePaths[0],
-                                      firstExcel, diffSheets[0])
-        onlyInSecondPanel = SheetPanel(self.typeNB, self.excelFilePaths[1],
-                                       secondExcel, diffSheets[1])
+        size = self.GetSize()
+        samePanel = SameSheetPanel(self.typeNB, size, firstExcel,
+                                secondExcel, firstFile, secondFile, sameSheets)
+        onlyInFirstPanel = SheetPanel(self.typeNB, size,
+                                      firstFile, firstExcel, diffSheets[0])
+        onlyInSecondPanel = SheetPanel(self.typeNB, size,
+                                       secondFile, secondExcel, diffSheets[1])
         self.typeNB.AddPage(samePanel, "相同sheet")
         self.typeNB.AddPage(onlyInFirstPanel, "第一个文件独有sheet")
         self.typeNB.AddPage(onlyInSecondPanel, "第二个文件独有sheet")

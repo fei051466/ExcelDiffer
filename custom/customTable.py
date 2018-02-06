@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from wx import grid
+from utils import generateColLabels, generateColIndex, getSheetData
 
 
 class DiffTable(grid.GridTableBase):
@@ -11,15 +12,29 @@ class DiffTable(grid.GridTableBase):
     def __init__(self, sheet, rowInfo, colInfo, cellInfo, flag):
         grid.GridTableBase.__init__(self)
 
-        self.colLabels = list(" ABCDEFGHIJKLMNOPQRSTUVWXYZ"[0:(sheet.ncols + 1)])
+        self.colLabels = generateColLabels(sheet.ncols)
 
         self.mapping = {}
         self.mapping['row'] = []
         self.mapping['col'] = []
         self.mapping['cell'] = [None for row in range(sheet.nrows)]
-        self.data = [['%d' % (row + 1)] + sheet.row_values(row)
-                     for row in range(sheet.nrows)]
-        self.initData = [sheet.row_values(row) for row in range(sheet.nrows)]
+        self.data = []
+        self.initData =[]
+        for row in range(sheet.nrows):
+            rowData = [row + 1]
+            rowInitData = []
+            for col in range(sheet.ncols):
+                value = sheet.cell(row, col).value
+                if not value:
+                    continue
+                if isinstance(value, float):
+                    if int(value) == value:
+                        value = int(value)
+                rowData.append(value)
+                rowInitData.append(value)
+            self.data.append(rowData)
+            self.initData.append(rowInitData)
+
 
         # 增加空白行
         blankRow = ['' for _ in range(self.GetNumberCols() + 1)]
@@ -178,14 +193,14 @@ class CellInfoTable(InfoTable):
         InfoTable.__init__(self, info, colLabels)
 
     def generateData(self):
-        self.addCount  = len(self.info)
+        self.addCount = len(self.info)
         for i in self.info:
             rowBefore, colBefore = i[0]
             valueBefore = self.dataGridB.initData[rowBefore][colBefore]
-            colBefore = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[colBefore]
+            colBefore = generateColIndex(colBefore)
             rowAfter, colAfter= i[1]
             valueAfter = self.dataGridA.initData[rowAfter][colAfter]
-            colAfter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[colAfter]
+            colAfter = generateColIndex(colAfter)
 
             self.data.append(['[%d,%s],[%d,%s]' % (rowBefore + 1, colBefore,
                             rowAfter + 1, colAfter), valueBefore, valueAfter])
