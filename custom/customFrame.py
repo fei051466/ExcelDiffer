@@ -18,11 +18,9 @@ class MainFrame(wx.Frame):
         self.Center()
 
         self.firstFileButton = filebrowse.FileBrowseButton(self, -1,
-                labelText="第一个Excel文件",
-                buttonText="选择", fileMask="*.xlsx")
+                labelText="第一个Excel文件", buttonText="选择")
         self.secondFileButton = filebrowse.FileBrowseButton(self, -1,
-                labelText="第二个Excel文件",
-                buttonText="选择", fileMask="*.xlsx")
+                labelText="第二个Excel文件", buttonText="选择")
 
         fileButtonSizer = wx.BoxSizer(wx.VERTICAL)
         fileButtonSizer.Add(self.firstFileButton, 0, wx.EXPAND)
@@ -50,7 +48,9 @@ class MainFrame(wx.Frame):
         :param event:
         :return:
         """
-        self.typeNB.DeleteAllPages()
+        # self.typeNB.DeleteAllPages()
+        for pageNum in range(self.typeNB.GetPageCount()):
+            self.typeNB.RemovePage(0)
         firstFile = self.firstFileButton.GetValue()
         secondFile = self.secondFileButton.GetValue()
         if firstFile == '' or secondFile == '':
