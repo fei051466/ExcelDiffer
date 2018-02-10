@@ -58,6 +58,11 @@ class MainFrame(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
+        if firstFile == secondFile:
+            dlg = wx.MessageDialog(self, "所选文件相同，无需对比", "温馨提示", wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
         try:
             firstExcel = xlrd.open_workbook(firstFile)
             secondExcel = xlrd.open_workbook(secondFile)
