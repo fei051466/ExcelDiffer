@@ -70,7 +70,7 @@ class DiffTable(grid.GridTableBase):
                 for row in self.mapping['cell']:
                     if not row:
                         continue
-                    row[i] = (row[i], i + addCount + 1)
+                    row[i - addCount] = (row[i - addCount], i + 1)
 
         # 行列转置
         self.data = map(list, zip(*self.data))
