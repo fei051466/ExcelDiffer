@@ -31,8 +31,6 @@ def getSheetData(sheet):
         rowData = []
         for col in range(sheet.ncols):
             value = sheet.cell(row, col).value
-            if not value:
-                continue
             if isinstance(value, float):
                 if int(value) == value:
                     value = int(value)
